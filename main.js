@@ -6,9 +6,13 @@ const USERS_COLLECTION_ID = 'users';
 export default async ({ req, res, log, error }) => {
   log('Attempting to create/retrieve user document for Google Login.');
 
-  const userId = req.env.APPWRITE_FUNCTION_USER_ID;
+  // ✅ Get userId from headers (where Appwrite passes it)
+  const userId = req.headers['x-appwrite-user-id'] || req.env?.APPWRITE_FUNCTION_USER_ID;
+  
+  log(`User ID from request: ${userId}`);
 
   if (!userId) {
+    error('No user ID found in request');
     return res.json(
       { status: 'failure', message: 'Authentication required. No user session found.' },
       401
@@ -43,20 +47,21 @@ export default async ({ req, res, log, error }) => {
 
     // ✅ Get authenticated user details
     const authUser = await users.get(userId);
+    log(`Retrieved auth user: ${authUser.email}`);
 
-    // ✅ Match your schema exactly (attribute names must match)
+    // ✅ Match your schema exactly
     const newUserData = {
       uid: userId,
       name: authUser.name || 'User',
       email: authUser.email || '',
       profileImage:
         'https://fastly.picsum.photos/id/866/200/200.jpg?hmac=i0ngmQOk9dRZEzhEosP31m_vQnKBQ9C19TBP1CGoIUA',
-      Role: 'student', // ✅ Match exact attribute name in your schema (capital "R")
+      Role: 'student',
       purchased: false,
-      deviceId: '', // ✅ matches your schema ("deviceId", not "device")
+      deviceId: '',
       walletBalance: 0.0,
       referralCode: '',
-      upiId: '', // ✅ matches your schema ("upiId", not "upilId")
+      upiId: '',
       upiVerified: false,
     };
 
